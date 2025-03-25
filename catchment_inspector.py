@@ -12,21 +12,24 @@ import geopandas as gpd
 from matplotlib.colors import Normalize
 from custom_streamline import *
 import os
+import configparser
+
+# Read settings and paths from settings file
+config = configparser.ConfigParser()
+config.read('/home/lauritzen/Documents/cathment_inspector/settings.ini')
 
 # Load the shapefile
-shapefile_path = "/home/lauritzen/Computerome/datasets/bassins/Rignot/Greenland_Basins_PS_v1.4.2.shp"
-basins = gpd.read_file(shapefile_path)
+basins = gpd.read_file(config['Paths']['shapefile'])
 
 # Load the velocity dataset
-velocity_path = "/home/lauritzen/Computerome/datasets/velocity/IV_20160128_20221222_0.5km.nc"
-velocity_data = xr.open_dataset(velocity_path)
+velocity_data = xr.open_dataset(config['Paths']['velocity_data'])
 
 # Extract velocity components and calculate magnitude
 u = velocity_data['land_ice_surface_easting_velocity'].squeeze()
 v = velocity_data['land_ice_surface_northing_velocity'].squeeze()
 speed = velocity_data['land_ice_surface_velocity_magnitude'].squeeze()
 
-def inspect_basin(n,starting_point=(np.nan,np.nan),speed_threshold=0.5):
+def inspect_basin(n,starting_point=(np.nan,np.nan),speed_threshold=config['Processing']['speed_threshold']):
     global new_point
     new_point = starting_point
     # Access the n'th entry of the GeoDataFrame
@@ -141,7 +144,7 @@ def inspect_basin(n,starting_point=(np.nan,np.nan),speed_threshold=0.5):
     return new_point
 
 if __name__ == "__main__":
-    save_file = 'starting_points.csv'
+    save_file = config['Paths']['savve_file']
     if os.path.exists(save_file):
         points = np.genfromtxt(save_file, delimiter=',', skip_header=1)
     else:

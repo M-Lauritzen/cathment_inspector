@@ -15,12 +15,7 @@ Ensure you have the following Python packages installed:
 - `matplotlib`
 - `numpy`
 - `geopandas`
-- `custom_streamline` (ensure this module is available)
-
-You can install missing dependencies using:
-```sh
-pip install xarray matplotlib numpy geopandas
-```
+- `scipy`
 
 ## Data Requirements
 ### Input Files
