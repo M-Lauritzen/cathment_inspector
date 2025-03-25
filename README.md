@@ -20,9 +20,8 @@ Ensure you have the following Python packages installed:
 ## Data Requirements
 ### Input Files
 - **Shapefile**: Contains Greenland basin boundaries.
-  - Default path: `/home/lauritzen/Computerome/datasets/bassins/Rignot/Greenland_Basins_PS_v1.4.2.shp`
 - **Velocity Data (NetCDF)**: Contains ice velocity information.
-  - Default path: `/home/lauritzen/Computerome/datasets/velocity/IV_20160128_20221222_0.5km.nc`
+- Paths must be set in config
 
 Ensure these files exist and update the paths in the script if necessary.
 
@@ -42,7 +41,6 @@ For each basin:
 
 ## Customization
 - Modify the `speed_threshold` parameter to filter low-velocity areas.
-- Adjust the default `starting_point` to a specific location if needed.
 
 ## Author
 Mikkel Lauritzen

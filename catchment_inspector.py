@@ -1,35 +1,52 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on 2025-03-25 13:02:37
+Catchment Inspection Tool
 
-@authors: Mikkel Lauritzen,
+Created on: 2025-03-25
+
+Authors: Mikkel Lauritzen
 """
+
 import xarray as xr
 import matplotlib.pyplot as plt
 import numpy as np
 import geopandas as gpd
 from matplotlib.colors import Normalize
-from custom_streamline import *
+from streamline import streamline
 import os
 import configparser
 
-# Read settings and paths from settings file
 config = configparser.ConfigParser()
+# Create user config file if it does not exist
+if not os.path.exists('/home/lauritzen/Documents/cathment_inspector/settings.ini'):
+    with open('/home/lauritzen/Documents/cathment_inspector/settings.ini', 'w') as configfile:
+        config['Paths'] = {
+            'shapefile': '',
+            'velocity_data': ''
+        }
+        config.write(configfile)
+
+# Read settings and paths from settings file
+config.read('/home/lauritzen/Documents/cathment_inspector/settings.default.ini')
 config.read('/home/lauritzen/Documents/cathment_inspector/settings.ini')
 
-# Load the shapefile
-basins = gpd.read_file(config['Paths']['shapefile'])
+# Check if the shapefile path is set in the configuration
+if 'shapefile' not in config['Paths'] or not config['Paths']['shapefile']:
+    raise ValueError("The path to the shapefile is not set in the configuration file. Please set 'shapefile' under the 'Paths' section in settings.ini.")
+if 'velocity_data' not in config['Paths'] or not config['Paths']['velocity_data']:
+    raise ValueError("The path to the velocity data is not set in the configuration file. Please set 'velocity_data' under the 'Paths' section in settings.ini.")
 
-# Load the velocity dataset
+# Load the shapefile and velocity dataset
+basins = gpd.read_file(config['Paths']['shapefile'])
 velocity_data = xr.open_dataset(config['Paths']['velocity_data'])
 
 # Extract velocity components and calculate magnitude
 u = velocity_data['land_ice_surface_easting_velocity'].squeeze()
 v = velocity_data['land_ice_surface_northing_velocity'].squeeze()
-speed = velocity_data['land_ice_surface_velocity_magnitude'].squeeze()
+speed = velocity_data.get('land_ice_surface_velocity_magnitude', np.sqrt(u**2 + v**2)).squeeze()
 
-def inspect_basin(n,starting_point=(np.nan,np.nan),speed_threshold=config['Processing']['speed_threshold']):
+def inspect_basin(n,starting_point=(np.nan,np.nan),speed_threshold=float(config['Processing']['speed_threshold'])):
     global new_point
     new_point = starting_point
     # Access the n'th entry of the GeoDataFrame
@@ -144,7 +161,7 @@ def inspect_basin(n,starting_point=(np.nan,np.nan),speed_threshold=config['Proce
     return new_point
 
 if __name__ == "__main__":
-    save_file = config['Paths']['savve_file']
+    save_file = config['Paths']['save_file']
     if os.path.exists(save_file):
         points = np.genfromtxt(save_file, delimiter=',', skip_header=1)
     else:
