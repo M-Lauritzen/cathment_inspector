@@ -17,10 +17,13 @@ from streamline import streamline
 import os
 import configparser
 
+# Change the working directory to the location of this script
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
 config = configparser.ConfigParser()
 # Create user config file if it does not exist
-if not os.path.exists('/home/lauritzen/Documents/cathment_inspector/settings.ini'):
-    with open('/home/lauritzen/Documents/cathment_inspector/settings.ini', 'w') as configfile:
+if not os.path.exists('settings.ini'):
+    with open('settings.ini', 'w') as configfile:
         config['Paths'] = {
             'shapefile': '',
             'velocity_data': ''
@@ -28,8 +31,8 @@ if not os.path.exists('/home/lauritzen/Documents/cathment_inspector/settings.ini
         config.write(configfile)
 
 # Read settings and paths from settings file
-config.read('/home/lauritzen/Documents/cathment_inspector/settings.default.ini')
-config.read('/home/lauritzen/Documents/cathment_inspector/settings.ini')
+config.read('settings.default.ini')
+config.read('settings.ini')
 
 # Check if the shapefile path is set in the configuration
 if 'shapefile' not in config['Paths'] or not config['Paths']['shapefile']:
@@ -44,7 +47,7 @@ velocity_data = xr.open_dataset(config['Paths']['velocity_data'])
 # Extract velocity components and calculate magnitude
 u = velocity_data['land_ice_surface_easting_velocity'].squeeze()
 v = velocity_data['land_ice_surface_northing_velocity'].squeeze()
-speed = velocity_data.get('land_ice_surface_velocity_magnitude', np.sqrt(u**2 + v**2)).squeeze()
+speed = velocity_data['land_ice_surface_velocity_magnitude'].squeeze()
 
 def inspect_basin(n,starting_point=(np.nan,np.nan),speed_threshold=float(config['Processing']['speed_threshold'])):
     global new_point
