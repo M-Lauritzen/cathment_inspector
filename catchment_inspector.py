@@ -16,6 +16,7 @@ from matplotlib.colors import Normalize
 from streamline import streamline
 import os
 import configparser
+import matplotlib
 
 # Change the working directory to the location of this script
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -42,12 +43,16 @@ if 'velocity_data' not in config['Paths'] or not config['Paths']['velocity_data'
 
 # Load the shapefile and velocity dataset
 basins = gpd.read_file(config['Paths']['shapefile'])
-velocity_data = xr.open_dataset(config['Paths']['velocity_data'])
+velocity_data = xr.open_dataset(config['Paths']['velocity_data']).squeeze()
+
+# Flip y-axis if its in the wrong direction
+if velocity_data.y[0] > velocity_data.y[1]:
+    velocity_data = velocity_data.reindex(y=velocity_data.y[::-1])
 
 # Extract velocity components and calculate magnitude
-u = velocity_data['land_ice_surface_easting_velocity'].squeeze()
-v = velocity_data['land_ice_surface_northing_velocity'].squeeze()
-speed = velocity_data['land_ice_surface_velocity_magnitude'].squeeze()
+u = velocity_data['land_ice_surface_easting_velocity']
+v = velocity_data['land_ice_surface_northing_velocity']
+speed = velocity_data['land_ice_surface_velocity_magnitude']
 
 def inspect_basin(n,starting_point=(np.nan,np.nan),speed_threshold=float(config['Processing']['speed_threshold'])):
     global new_point
@@ -164,6 +169,14 @@ def inspect_basin(n,starting_point=(np.nan,np.nan),speed_threshold=float(config[
     return new_point
 
 if __name__ == "__main__":
+    # Check the current backend
+    current_backend = matplotlib.get_backend()
+    print(f"Current Matplotlib backend: {current_backend}")
+
+    # Ensure the backend supports interactivity
+    if current_backend not in ['Qt5Agg', 'TkAgg', 'MacOSX']:
+        print("Switching to an interactive backend...")
+        matplotlib.use('TkAgg')  # Switch to a commonly used interactive backend
     save_file = config['Paths']['save_file']
     if os.path.exists(save_file):
         points = np.genfromtxt(save_file, delimiter=',', skip_header=1)
