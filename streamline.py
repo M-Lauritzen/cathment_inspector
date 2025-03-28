@@ -2,7 +2,7 @@ import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 from scipy.integrate import solve_ivp
 
-def streamline(X, Y, U, V, start_point, t_max=100000, max_points=10000, method='LSODA'):
+def streamline(X, Y, U, V, start_point, t_max=100000, max_points=10000, method='LSODA',normalize_velocity=False):
     """
     Computes a streamline in both forward and backward directions using SciPy's ODE solver.
     
@@ -13,6 +13,7 @@ def streamline(X, Y, U, V, start_point, t_max=100000, max_points=10000, method='
     - t_max: Maximum integration time.
     - max_points: Maximum number of points in each direction.
     - method: ODE solver method (e.g., 'RK45', 'RK23', 'LSODA').
+    - normalize_velocity: Normalizes the interpolated velocity field. This effectivly changes the time integrant to a distance
 
     Matplotlib streamline seems to use LSODA for integration
     
@@ -22,12 +23,17 @@ def streamline(X, Y, U, V, start_point, t_max=100000, max_points=10000, method='
     # Create interpolators for velocity field
     U_interp = RegularGridInterpolator((Y[:, 0], X[0, :]), U, bounds_error=False, fill_value=None)
     V_interp = RegularGridInterpolator((Y[:, 0], X[0, :]), V, bounds_error=False, fill_value=None)
+    if normalize_velocity:
+        normalizer = RegularGridInterpolator((Y[:, 0], X[0, :]), np.sqrt(U**2+V**2), bounds_error=False, fill_value=None)
+    else:
+        normalizer = lambda xy : 1.0 # always return 1.0
 
     def velocity_field(t, xy):
         """Velocity field function for ODE solver."""
         x, y = xy
-        uv = np.array([U_interp((y, x)), V_interp((y, x))])
+        uv = np.array([U_interp((y, x))/normalizer((y,x)), V_interp((y, x))/normalizer((y,x))])
         return uv if np.all(np.isfinite(uv)) else [0, 0]  # Stop if out of bounds
+
 
     # Time evaluation points
     t_eval_fwd = np.linspace(0, t_max, max_points)    # Forward: Increasing time
